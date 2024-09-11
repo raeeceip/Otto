@@ -6,6 +6,3 @@ remote_theme: pages-themes/hacker@v0.2.0
    description: A simple and efficient load balancer for localhost applications
    show_downloads: true
    google_analytics:
-
-   baseurl: "/otto"
-   url: "https://otto.chiso.dev"
