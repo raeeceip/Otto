@@ -1,6 +1,6 @@
 {
     "port": ":8080",
-    "healthCheckInterval": "5s",
+    "healthCheckInterval": "3s",
     "servers": [
       "http://localhost:5001",
       "http://localhost:5002",

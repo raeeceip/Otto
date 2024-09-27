@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
@@ -12,8 +11,8 @@ import (
 
 var (
 	baseStyle = lipgloss.NewStyle().
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240"))
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("240"))
 
 	healthyStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("green"))
 	unhealthyStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("red"))
@@ -23,6 +22,7 @@ type model struct {
 	table     table.Model
 	spinner   spinner.Model
 	isLoading bool
+	status    string
 }
 
 func initialModel() model {
@@ -57,11 +57,12 @@ func initialModel() model {
 		table:     t,
 		spinner:   sp,
 		isLoading: true,
+		status:    "Checking prerequisites...",
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(m.spinner.Tick, loadData)
+	return tea.Batch(m.spinner.Tick, checkPrerequisites)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -74,14 +75,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "r":
 			m.isLoading = true
+			m.status = "Refreshing server status..."
 			return m, loadData
 		}
 	case spinner.TickMsg:
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
+	case prerequisitesCheckedMsg:
+		if msg.err != nil {
+			m.status = fmt.Sprintf("Error: %v", msg.err)
+			return m, tea.Quit
+		}
+		m.status = "Loading server status..."
+		return m, loadData
 	case dataLoadedMsg:
 		m.isLoading = false
 		updateTableData(&m, msg.servers)
+		m.status = "Server status loaded. Press 'r' to refresh, 'q' to quit."
 		return m, nil
 	}
 
@@ -91,9 +101,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	if m.isLoading {
-		return fmt.Sprintf("\n\n   %s Loading server status...\n\n", m.spinner.View())
+		return fmt.Sprintf("\n\n   %s %s\n\n", m.spinner.View(), m.status)
 	}
-	return baseStyle.Render(m.table.View()) + "\n\nPress 'r' to refresh, 'q' to quit\n"
+	return baseStyle.Render(m.table.View()) + "\n\n" + m.status + "\n"
 }
 
 func updateTableData(m *model, servers []*Server) {
@@ -112,9 +122,8 @@ type dataLoadedMsg struct {
 	servers []*Server
 }
 
-func loadData() tea.Msg {
-	time.Sleep(2 * time.Second) // Simulate loading time
-	return dataLoadedMsg{servers: servers}
+type prerequisitesCheckedMsg struct {
+	err error
 }
 
 func runTUI() {
