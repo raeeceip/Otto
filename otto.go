@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/charmbracelet/bubbletea"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -69,8 +70,8 @@ func healthCheck(s *Server, healthCheckInterval time.Duration) {
 }
 
 func main() {
+	go runTUI()
 	configFile, err := os.Open("config.json")
-	if err != nil {
 		log.Fatal("Error opening config file:", err)
 	}
 	defer configFile.Close()
@@ -78,19 +79,16 @@ func main() {
 	var config Config
 	decoder := json.NewDecoder(configFile)
 	err = decoder.Decode(&config)
-	if err != nil {
 		log.Fatal("Error decoding config file:", err)
 	}
 
 	healthCheckInterval, err := time.ParseDuration(config.HealthCheckInterval)
-	if err != nil {
 		log.Fatal("Invalid health check interval:", err)
 	}
 
 	servers := make([]*Server, len(config.Servers))
 	for i, serverURL := range config.Servers {
 		url, err := url.Parse(serverURL)
-		if err != nil {
 			log.Fatal("Invalid server URL:", err)
 		}
 		servers[i] = &Server{URL: url, IsHealthy: true}
@@ -109,9 +107,10 @@ func main() {
 		server.ReverseProxy().ServeHTTP(w, r)
 	})
 
-	log.Println("Starting Otto load balancer on port", config.Port)
-	err = http.ListenAndServe(config.Port, nil)
-	if err != nil {
-		log.Fatalf("Error starting load balancer: %s\n", err.Error())
+	go func() {
+		if err := http.ListenAndServe(config.Port, nil); err != nil {
+			log.Fatalf("Error starting load balancer: %s\n", err.Error())
+		}
+	}()
 	}
 }
