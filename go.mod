@@ -1,4 +1,4 @@
-module Otto
+module otto
 
 go 1.23.0
 

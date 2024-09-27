@@ -1,7 +1,10 @@
-package main
+package ui
 
 import (
 	"fmt"
+	"time"
+
+	"otto/models"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
@@ -106,7 +109,7 @@ func (m model) View() string {
 	return baseStyle.Render(m.table.View()) + "\n\n" + m.status + "\n"
 }
 
-func updateTableData(m *model, servers []*Server) {
+func updateTableData(m *model, servers []*models.Server) {
 	var rows []table.Row
 	for _, server := range servers {
 		status := healthyStyle.Render("✓ Healthy")
@@ -119,14 +122,30 @@ func updateTableData(m *model, servers []*Server) {
 }
 
 type dataLoadedMsg struct {
-	servers []*Server
+	servers []*models.Server
 }
 
 type prerequisitesCheckedMsg struct {
 	err error
 }
 
-func runTUI() {
+// Add these functions to handle prerequisites and data loading
+func checkPrerequisites() tea.Msg {
+	// Implement prerequisite checks here
+	// For now, we'll just simulate a delay
+	time.Sleep(1 * time.Second)
+	return prerequisitesCheckedMsg{err: nil}
+}
+
+func loadData() tea.Msg {
+	// Implement data loading here
+	// For now, we'll just simulate a delay and return empty data
+	time.Sleep(1 * time.Second)
+	return dataLoadedMsg{servers: []*models.Server{}}
+}
+
+// RunTUI starts the Terminal User Interface
+func RunTUI() {
 	p := tea.NewProgram(initialModel())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error running program: %v", err)
