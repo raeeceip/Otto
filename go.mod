@@ -1,4 +1,4 @@
-module otto
+module github.com/raeeceip/otto
 
 go 1.23.0
 
